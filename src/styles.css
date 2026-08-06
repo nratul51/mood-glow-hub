@@ -84,11 +84,16 @@
   --chart-5: oklch(0.66 0.12 25);
 }
 
-/* Interpolated trend colors: intensity 0 -> calm, 1 -> warm */
-:root {
+/* Interpolated trend colors: intensity 0 -> calm, 1 -> warm.
+   Declared on every element so a locally overridden --trend recomputes them. */
+:root,
+*,
+::before,
+::after {
   --trend-color: color-mix(in oklab, var(--warm) calc(var(--trend) * 100%), var(--calm));
   --trend-soft: color-mix(in oklab, var(--trend-color) calc(10% + var(--trend) * 14%), var(--card));
 }
+
 
 .dark {
   --background: oklch(0.21 0.014 150);
