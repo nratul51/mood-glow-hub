@@ -24,8 +24,11 @@ export function ReminderScheduler() {
     const tick = () => {
       if (Notification.permission !== "granted") return;
       const now = new Date();
-      const [h, m] = time.split(":").map(Number);
+      const [rawH, rawM] = time.split(":");
+      const h = Number(rawH ?? 21);
+      const m = Number(rawM ?? 0);
       const due = now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
+
       if (!due) return;
       if (window.localStorage.getItem(STORAGE_KEY) === todayKey()) return;
 
