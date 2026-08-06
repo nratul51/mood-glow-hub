@@ -12,7 +12,7 @@ export function DisclaimerDialog({
 }) {
   return (
     <Dialog open={open}>
-      <DialogContent className="max-w-sm rounded-3xl [&>button]:hidden">
+      <DialogContent className="max-w-sm rounded-3xl [&>button:last-child]:hidden">
         <DialogHeader className="items-center text-center">
           <div className="mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-accent">
             <HeartHandshake className="h-5 w-5 text-primary" strokeWidth={1.6} />
