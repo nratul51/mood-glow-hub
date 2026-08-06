@@ -14,7 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      check_ins: {
+        Row: {
+          created_at: string
+          energy: number
+          entry_date: string
+          id: string
+          mood: number
+          note: string | null
+          sleep_hours: number | null
+          stress_tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          energy: number
+          entry_date?: string
+          id?: string
+          mood: number
+          note?: string | null
+          sleep_hours?: number | null
+          stress_tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          energy?: number
+          entry_date?: string
+          id?: string
+          mood?: number
+          note?: string | null
+          sleep_hours?: number | null
+          stress_tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          disclaimer_ack: boolean
+          reminder_enabled: boolean
+          reminder_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          disclaimer_ack?: boolean
+          reminder_enabled?: boolean
+          reminder_time?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          disclaimer_ack?: boolean
+          reminder_enabled?: boolean
+          reminder_time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
