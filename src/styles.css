@@ -84,7 +84,14 @@
   --chart-5: oklch(0.66 0.12 25);
 }
 
+@property --trend {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 /* Interpolated trend colors: intensity 0 -> calm, 1 -> warm.
+
    Declared on every element so a locally overridden --trend recomputes them. */
 :root,
 *,
