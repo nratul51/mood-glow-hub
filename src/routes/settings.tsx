@@ -92,16 +92,13 @@ function SettingsPage() {
           />
         </div>
 
-        {permission === "unsupported" ? (
-          <p className="text-xs text-muted-foreground">
-            This browser doesn't support notifications.
-          </p>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            You'll get an email reminder at this time if you haven't checked in — even when the app
-            is closed. Browser notifications also appear while a tab is open.
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground">
+          You'll get an email reminder at this time if you haven't checked in — even when the app is
+          closed.
+          {permission === "granted"
+            ? " Browser notifications also appear while a tab is open."
+            : " Browser pop-up notifications are off, but that doesn't affect your email reminder."}
+        </p>
       </section>
 
       <section className="soft-card space-y-2 p-5">
