@@ -8,7 +8,16 @@ export type UserSettings = {
   reminder_enabled: boolean;
   reminder_time: string;
   disclaimer_ack: boolean;
+  timezone: string;
 };
+
+function browserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
 
 export function useCheckIns(days = 28) {
   const { user } = useAuth();
