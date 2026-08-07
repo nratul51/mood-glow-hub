@@ -94,7 +94,8 @@ function SettingsPage() {
           </p>
         ) : (
           <p className="text-xs text-muted-foreground">
-            Reminders appear while Check In Hub is open in a browser tab.
+            You'll get an email reminder at this time if you haven't checked in — even when the app
+            is closed. Browser notifications also appear while a tab is open.
           </p>
         )}
       </section>

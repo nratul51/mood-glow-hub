@@ -8,7 +8,16 @@ export type UserSettings = {
   reminder_enabled: boolean;
   reminder_time: string;
   disclaimer_ack: boolean;
+  timezone: string;
 };
+
+function browserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
 
 export function useCheckIns(days = 28) {
   const { user } = useAuth();
@@ -38,17 +47,23 @@ export function useSettings() {
     queryKey: ["user_settings", user?.id],
     enabled: !!user,
     queryFn: async (): Promise<UserSettings> => {
-      const { data, error } = await supabase
-        .from("user_settings")
-        .select("user_id, reminder_enabled, reminder_time, disclaimer_ack")
-        .maybeSingle();
+      const tz = browserTimezone();
+      const columns = "user_id, reminder_enabled, reminder_time, disclaimer_ack, timezone";
+      const { data, error } = await supabase.from("user_settings").select(columns).maybeSingle();
       if (error) throw error;
-      if (data) return data as UserSettings;
+      if (data) {
+        const settings = data as UserSettings;
+        if (settings.timezone !== tz) {
+          await supabase.from("user_settings").update({ timezone: tz }).eq("user_id", user!.id);
+          return { ...settings, timezone: tz };
+        }
+        return settings;
+      }
 
       const { data: created, error: insertError } = await supabase
         .from("user_settings")
-        .insert({ user_id: user!.id })
-        .select("user_id, reminder_enabled, reminder_time, disclaimer_ack")
+        .insert({ user_id: user!.id, timezone: tz })
+        .select(columns)
         .single();
       if (insertError) throw insertError;
       return created as UserSettings;
