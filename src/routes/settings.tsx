@@ -47,15 +47,19 @@ function SettingsPage() {
   const time = settings?.reminder_time ?? "21:00";
 
   const toggleReminder = async (next: boolean) => {
-    if (next && permission !== "granted" && permission !== "unsupported") {
-      const result = await Notification.requestPermission();
-      setPermission(result);
-      if (result !== "granted") {
-        toast.error("Notifications are blocked in your browser settings.");
-        return;
+    // Email reminders always work. Browser notifications are a bonus — ask for
+    // permission, but never block the toggle if it's denied or unavailable
+    // (e.g. inside an embedded preview frame).
+    if (next && permission === "default") {
+      try {
+        const result = await Notification.requestPermission();
+        setPermission(result);
+      } catch {
+        // ignore: some embedded contexts reject the request outright
       }
     }
     update.mutate({ reminder_enabled: next });
+    if (next) toast.success("Daily reminder on — we'll email you at your chosen time.");
   };
 
   return (
@@ -88,16 +92,13 @@ function SettingsPage() {
           />
         </div>
 
-        {permission === "unsupported" ? (
-          <p className="text-xs text-muted-foreground">
-            This browser doesn't support notifications.
-          </p>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            You'll get an email reminder at this time if you haven't checked in — even when the app
-            is closed. Browser notifications also appear while a tab is open.
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground">
+          You'll get an email reminder at this time if you haven't checked in — even when the app is
+          closed.
+          {permission === "granted"
+            ? " Browser notifications also appear while a tab is open."
+            : " Browser pop-up notifications are off, but that doesn't affect your email reminder."}
+        </p>
       </section>
 
       <section className="soft-card space-y-2 p-5">
