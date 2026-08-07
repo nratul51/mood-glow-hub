@@ -47,15 +47,19 @@ function SettingsPage() {
   const time = settings?.reminder_time ?? "21:00";
 
   const toggleReminder = async (next: boolean) => {
-    if (next && permission !== "granted" && permission !== "unsupported") {
-      const result = await Notification.requestPermission();
-      setPermission(result);
-      if (result !== "granted") {
-        toast.error("Notifications are blocked in your browser settings.");
-        return;
+    // Email reminders always work. Browser notifications are a bonus — ask for
+    // permission, but never block the toggle if it's denied or unavailable
+    // (e.g. inside an embedded preview frame).
+    if (next && permission === "default") {
+      try {
+        const result = await Notification.requestPermission();
+        setPermission(result);
+      } catch {
+        // ignore: some embedded contexts reject the request outright
       }
     }
     update.mutate({ reminder_enabled: next });
+    if (next) toast.success("Daily reminder on — we'll email you at your chosen time.");
   };
 
   return (
