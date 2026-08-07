@@ -57,24 +57,30 @@ export type Database = {
         Row: {
           created_at: string
           disclaimer_ack: boolean
+          last_reminder_sent: string | null
           reminder_enabled: boolean
           reminder_time: string
+          timezone: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           disclaimer_ack?: boolean
+          last_reminder_sent?: string | null
           reminder_enabled?: boolean
           reminder_time?: string
+          timezone?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           disclaimer_ack?: boolean
+          last_reminder_sent?: string | null
           reminder_enabled?: boolean
           reminder_time?: string
+          timezone?: string
           updated_at?: string
           user_id?: string
         }
