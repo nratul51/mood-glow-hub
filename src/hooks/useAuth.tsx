@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
       // Ignore the transient null that can arrive mid token-refresh; only a real
       // sign-out should clear the session (otherwise the app blanks out).
-      if (!next && event !== "SIGNED_OUT" && event !== "USER_DELETED") return;
+      if (!next && event !== "SIGNED_OUT") return;
       sawAuthEvent = true;
       setSession(next);
       setLoading(false);
