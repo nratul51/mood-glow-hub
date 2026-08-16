@@ -21,18 +21,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => {
+    let mounted = true;
+    let sawAuthEvent = false;
+
+    const { data } = supabase.auth.onAuthStateChange((event, next) => {
+      if (!mounted) return;
+      // Ignore the transient null that can arrive mid token-refresh; only a real
+      // sign-out should clear the session (otherwise the app blanks out).
+      if (!next && event !== "SIGNED_OUT") return;
+      sawAuthEvent = true;
       setSession(next);
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session: current } }) => {
-      setSession(current);
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: current } }) => {
+        if (!mounted) return;
+        // Don't let a late-resolving getSession() overwrite fresher listener state.
+        if (!sawAuthEvent) setSession(current);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (mounted) setLoading(false);
+      });
 
-    return () => data.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      data.subscription.unsubscribe();
+    };
   }, []);
+
 
   return (
     <AuthContext.Provider
