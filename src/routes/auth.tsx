@@ -105,28 +105,53 @@ function AuthPage() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete={
+                  mode === "signup" ? "new-password" : "current-password"
+                }
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          )}
           <Button type="submit" className="w-full" disabled={busy}>
-            {mode === "signup" ? "Create account" : "Sign in"}
+            {mode === "signup"
+              ? "Create account"
+              : mode === "forgot"
+                ? "Send reset link"
+                : "Sign in"}
           </Button>
-          <button
-            type="button"
-            onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
-            className="w-full text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
-          >
-            {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
-          </button>
+          <div className="flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setMode((m) =>
+                  m === "signup" ? "signin" : m === "forgot" ? "signin" : "signup",
+                )
+              }
+              className="text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
+            >
+              {mode === "signup"
+                ? "Already have an account? Sign in"
+                : "New here? Create an account"}
+            </button>
+            {mode === "signin" && (
+              <button
+                type="button"
+                onClick={() => setMode("forgot")}
+                className="text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
+              >
+                Forgot password?
+              </button>
+            )}
+          </div>
         </form>
 
         <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">{DISCLAIMER}</p>
