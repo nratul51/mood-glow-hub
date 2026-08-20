@@ -32,7 +32,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -45,23 +45,34 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        if (data.session) {
-          toast.success("Account created. Welcome in.");
+        if (mode === "signup") {
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { emailRedirectTo: window.location.origin },
+          });
+          if (error) throw error;
+          if (data.session) {
+            toast.success("Account created. Welcome in.");
+          } else {
+            toast.success(
+              "Account created. Check your email to confirm, then sign in.",
+            );
+          }
+        } else if (mode === "forgot") {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+          });
+          if (error) throw error;
+          toast.success("Check your email for a password reset link.");
+          setMode("signin");
         } else {
-          toast.success("Account created. Check your email to confirm, then sign in.");
+          const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (error) throw error;
         }
-
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -94,28 +105,53 @@ function AuthPage() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete={
+                  mode === "signup" ? "new-password" : "current-password"
+                }
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          )}
           <Button type="submit" className="w-full" disabled={busy}>
-            {mode === "signup" ? "Create account" : "Sign in"}
+            {mode === "signup"
+              ? "Create account"
+              : mode === "forgot"
+                ? "Send reset link"
+                : "Sign in"}
           </Button>
-          <button
-            type="button"
-            onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
-            className="w-full text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
-          >
-            {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
-          </button>
+          <div className="flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setMode((m) =>
+                  m === "signup" ? "signin" : m === "forgot" ? "signin" : "signup",
+                )
+              }
+              className="text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
+            >
+              {mode === "signup"
+                ? "Already have an account? Sign in"
+                : "New here? Create an account"}
+            </button>
+            {mode === "signin" && (
+              <button
+                type="button"
+                onClick={() => setMode("forgot")}
+                className="text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
+              >
+                Forgot password?
+              </button>
+            )}
+          </div>
         </form>
 
         <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">{DISCLAIMER}</p>
