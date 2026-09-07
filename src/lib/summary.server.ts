@@ -62,30 +62,57 @@ export async function generateWeeklySummary(
     )
     .join("\n");
 
-  const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
+  const userPrompt = `Here are my logged check-ins for the last ${rows.length} entries. Reflect the patterns back to me.\n\n${table}`;
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "google/gemini-3.5-flash",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: `Here are my logged check-ins for the last ${rows.length} entries. Reflect the patterns back to me.\n\n${table}`,
+  // Server-side only. Never referenced from client code or VITE_* variables.
+  const lovableKey = process.env["LOVABLE_API_KEY"];
+  const geminiKey = process.env["GEMINI_API_KEY"];
+
+  if (!lovableKey && !geminiKey) {
+    throw new Error(
+      "Weekly reflection isn't configured on this deployment. Add a GEMINI_API_KEY (or run the app on Lovable hosting) and try again.",
+    );
+  }
+
+  const res = lovableKey
+    ? await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${lovableKey}`,
         },
-      ],
-    }),
-  });
+        body: JSON.stringify({
+          model: "google/gemini-3.7-flash",
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      })
+    : await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${geminiKey}`,
+          },
+          body: JSON.stringify({
+            model: "gemini-2.5-flash",
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: userPrompt },
+            ],
+          }),
+        },
+      );
 
   if (res.status === 429) throw new Error("The summary service is busy right now. Please try again in a moment.");
   if (res.status === 402) throw new Error("AI usage limit reached for this workspace.");
+  if (res.status === 401 || res.status === 403)
+    throw new Error("The summary service rejected this deployment's AI key. Check the server-side AI key setting.");
   if (!res.ok) throw new Error(`Summary unavailable (${res.status}).`);
+
 
   const json = (await res.json()) as {
     choices?: { message?: { content?: string } }[];
