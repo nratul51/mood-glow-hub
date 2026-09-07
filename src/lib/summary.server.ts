@@ -71,7 +71,7 @@ export async function generateWeeklySummary(
 
   if (!lovableKey && !openAiKey && !geminiKey) {
     throw new Error(
-      "Weekly reflection isn't configured on this deployment. Add an OPENAI_API_KEY (or GEMINI_API_KEY), or run the app on Lovable hosting.",
+      "No AI key was found on this deployment (checked OPENAI_API_KEY, GEMINI_API_KEY, LOVABLE_API_KEY). If you just added the secret, redeploy so the running version picks it up.",
     );
   }
 
