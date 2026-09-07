@@ -66,46 +66,65 @@ export async function generateWeeklySummary(
 
   // Server-side only. Never referenced from client code or VITE_* variables.
   const lovableKey = process.env["LOVABLE_API_KEY"];
+  const openAiKey = process.env["OPENAI_API_KEY"];
   const geminiKey = process.env["GEMINI_API_KEY"];
 
-  if (!lovableKey && !geminiKey) {
+  if (!lovableKey && !openAiKey && !geminiKey) {
     throw new Error(
-      "Weekly reflection isn't configured on this deployment. Add a GEMINI_API_KEY (or run the app on Lovable hosting) and try again.",
+      "Weekly reflection isn't configured on this deployment. Add an OPENAI_API_KEY (or GEMINI_API_KEY), or run the app on Lovable hosting.",
     );
   }
 
-  const res = lovableKey
-    ? await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  let res: Response;
+  if (lovableKey) {
+    res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${lovableKey}`,
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3.7-flash",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+  } else if (openAiKey) {
+    res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${openAiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+  } else {
+    res = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${lovableKey}`,
+          Authorization: `Bearer ${geminiKey}`,
         },
         body: JSON.stringify({
-          model: "google/gemini-3.7-flash",
+          model: "gemini-2.5-flash",
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: userPrompt },
           ],
         }),
-      })
-    : await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${geminiKey}`,
-          },
-          body: JSON.stringify({
-            model: "gemini-2.5-flash",
-            messages: [
-              { role: "system", content: SYSTEM_PROMPT },
-              { role: "user", content: userPrompt },
-            ],
-          }),
-        },
-      );
+      },
+    );
+  }
 
   if (res.status === 429) throw new Error("The summary service is busy right now. Please try again in a moment.");
   if (res.status === 402) throw new Error("AI usage limit reached for this workspace.");
