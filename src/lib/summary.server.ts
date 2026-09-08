@@ -126,11 +126,31 @@ export async function generateWeeklySummary(
     );
   }
 
-  if (res.status === 429) throw new Error("The summary service is busy right now. Please try again in a moment.");
-  if (res.status === 402) throw new Error("AI usage limit reached for this workspace.");
-  if (res.status === 401 || res.status === 403)
-    throw new Error("The summary service rejected this deployment's AI key. Check the server-side AI key setting.");
-  if (!res.ok) throw new Error(`Summary unavailable (${res.status}).`);
+  const provider = lovableKey ? "Lovable AI" : openAiKey ? "OpenAI" : "Gemini";
+
+  if (!res.ok) {
+    const raw = await res.text().catch(() => "");
+    let detail = raw.slice(0, 300);
+    try {
+      const parsed = JSON.parse(raw) as { error?: { message?: string; code?: string } };
+      if (parsed.error?.message) detail = parsed.error.message;
+      if (parsed.error?.code === "insufficient_quota") {
+        throw new Error(
+          `${provider} rejected the request: your account has no remaining credit/quota. Add billing to the ${provider} account, then try again.`,
+        );
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith(provider)) throw e;
+    }
+
+    if (res.status === 429)
+      throw new Error(`${provider} is rate-limiting or out of quota (429): ${detail}`);
+    if (res.status === 402) throw new Error(`${provider} usage limit reached: ${detail}`);
+    if (res.status === 401 || res.status === 403)
+      throw new Error(`${provider} rejected this deployment's API key (${res.status}): ${detail}`);
+    throw new Error(`Summary unavailable — ${provider} returned ${res.status}: ${detail}`);
+  }
+
 
 
   const json = (await res.json()) as {
