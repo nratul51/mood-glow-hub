@@ -75,55 +75,39 @@ export async function generateWeeklySummary(
     );
   }
 
+  const messages = [
+    { role: "system", content: SYSTEM_PROMPT },
+    { role: "user", content: userPrompt },
+  ];
+
+  const call = (url: string, key: string, model: string) =>
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({ model, messages }),
+    });
+
   let res: Response;
   if (lovableKey) {
-    res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${lovableKey}`,
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3.7-flash",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
-  } else if (openAiKey) {
-    res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openAiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
-  } else {
-    res = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${geminiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gemini-2.5-flash",
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: userPrompt },
-          ],
-        }),
-      },
+    res = await call(
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      lovableKey,
+      "google/gemini-2.5-flash",
     );
+  } else if (openAiKey) {
+    res = await call("https://api.openai.com/v1/chat/completions", openAiKey, "gpt-4o-mini");
+  } else {
+    const geminiUrl =
+      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+    // Model availability differs per key/region — try known-good names in order.
+    const candidates = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-flash-latest"];
+    res = await call(geminiUrl, geminiKey!, candidates[0]!);
+    for (let i = 1; i < candidates.length && res.status === 404; i++) {
+      res = await call(geminiUrl, geminiKey!, candidates[i]!);
+    }
   }
 
   const provider = lovableKey ? "Lovable AI" : openAiKey ? "OpenAI" : "Gemini";
